@@ -30,8 +30,10 @@ defmodule Nectar.Worker do
     response = """
     HTTP/1.1 200 OK
     Content-Type: text/plain
+    Server: Nectar
     Content-Length: #{byte_size(message)}
     Connection: close
+    Date: #{get_datetime()}
 
     #{message}
     """
@@ -39,5 +41,11 @@ defmodule Nectar.Worker do
     :gen_tcp.send(client, response)
     :gen_tcp.shutdown(client, :read_write)
     :gen_tcp.close(client)
+  end
+
+  defp get_datetime() do
+    now = Timex.now()
+
+    Timex.format!(now, "{WDshort} {0D} {Mshort} {YYYY} {0h12}:{m}:{s} GMT")
   end
 end

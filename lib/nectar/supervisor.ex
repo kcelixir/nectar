@@ -7,8 +7,8 @@ defmodule Nectar.Supervisor do
 
   def init(socket) do
     children =
-      (0..20)
-      |> Enum.map(fn (n) ->
+      0..20
+      |> Enum.map(fn n ->
         worker(Nectar.Worker, [socket], restart: :permanent, id: :"worker#{n}")
       end)
 

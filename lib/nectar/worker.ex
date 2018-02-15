@@ -10,7 +10,7 @@ defmodule Nectar.Worker do
   def start_link(socket) do
     Task.start_link(fn ->
       {:ok, client} = :gen_tcp.accept(socket)
-      Logger.debug "client connected"
+      Logger.debug("client connected")
       serve(client)
     end)
   end
@@ -31,11 +31,16 @@ defmodule Nectar.Worker do
 
   defp read_header(client, %{headers: headers} = request) do
     Logger.debug("in read_header/2")
+
     case read_line(client) do
-      "" -> read_message_body(client, request)
-      header_line when is_binary(header_line) -> read_header(client, %{request | headers: [header_line] ++ headers})
+      "" ->
+        read_message_body(client, request)
+
+      header_line when is_binary(header_line) ->
+        read_header(client, %{request | headers: [header_line] ++ headers})
+
       other ->
-        Logger.error("read_line/1 returned #{inspect other}")
+        Logger.error("read_line/1 returned #{inspect(other)}")
         {:client, :error, other}
     end
   end
@@ -46,10 +51,14 @@ defmodule Nectar.Worker do
   end
 
   # FIXME: Doesn't read a line -- reads a chunk of data. Should break it up into lines.
-  defp read_line(client), do: with {:ok, data} <- :gen_tcp.recv(client, 0), do: String.trim_trailing(data)
+  defp read_line(client),
+    do: with({:ok, data} <- :gen_tcp.recv(client, 0), do: String.trim_trailing(data))
 
-  defp write_response({client, :error, reason}), do: build_response(500, "Internal Server Error", (inspect reason)) |> send_response(client)
-  defp write_response({client, _request}), do: build_response(200, "OK", "Hello, world!") |> send_response(client)
+  defp write_response({client, :error, reason}),
+    do: build_response(500, "Internal Server Error", inspect(reason)) |> send_response(client)
+
+  defp write_response({client, _request}),
+    do: build_response(200, "OK", "Hello, world!") |> send_response(client)
 
   defp build_response(status_code, status_message, message_body) do
     """

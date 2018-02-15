@@ -75,7 +75,7 @@ defmodule Nectar.Worker do
     :gen_tcp.close(client)
   end
 
-  defp write_response({client, request}) do
+  defp write_response({client, _request}) do
     Logger.debug("in write_response/1")
     message_body = "Hello, world!"
 

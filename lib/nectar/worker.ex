@@ -18,46 +18,41 @@ defmodule Nectar.Worker do
   defp serve(client) do
     client
     |> read_request()
-    |> write_response()
+    |> write_response(client)
   end
 
-  defp read_request(client), do: read_request_line(client)
+  defp read_request(client) do
+    with {:ok, raw_request} <- :gen_tcp.recv(client, 0) do
+      request = parse_request(raw_request)
 
-  defp read_request_line(client) do
-    Logger.debug("in read_request_line/1")
-    request_line = read_line(client)
-    read_header(client, %{request_line: request_line, headers: []})
-  end
-
-  defp read_header(client, %{headers: headers} = request) do
-    Logger.debug("in read_header/2")
-
-    case read_line(client) do
-      "" ->
-        read_message_body(client, request)
-
-      header_line when is_binary(header_line) ->
-        read_header(client, %{request | headers: [header_line] ++ headers})
-
-      other ->
-        Logger.error("read_line/1 returned #{inspect(other)}")
-        {:client, :error, other}
+      Logger.debug(inspect(request), label: "request")
+      request
     end
   end
 
-  defp read_message_body(client, request) do
-    Logger.debug("in read_message_body/2")
-    {client, request}
+  defp parse_request(data) do
+    [request_line | rest] = String.split(data, "\r\n")
+
+    {headers, body} = parse_headers(rest)
+
+    %{request_line: request_line, headers: headers, body: body}
   end
 
-  # FIXME: Doesn't read a line -- reads a chunk of data. Should break it up into lines.
-  defp read_line(client),
-    do: with({:ok, data} <- :gen_tcp.recv(client, 0), do: String.trim_trailing(data))
+  defp parse_headers(["" | t]), do: {[], t}
 
-  defp write_response({client, :error, reason}),
+  defp parse_headers([h | t]) do
+    [key, value] = String.split(h, ":", parts: 2, trim: true)
+
+    case parse_headers(t) do
+      {headers, body} when is_binary(body) -> {[{key, value}] ++ headers, body}
+      {headers, _} -> {[{key, value}] ++ headers, nil}
+    end
+  end
+
+  defp write_response({:error, reason}, client),
     do: build_response(500, "Internal Server Error", inspect(reason)) |> send_response(client)
 
-  defp write_response({client, _request}),
+  defp write_response(%{request_line: _, headers: _, body: _}, client),
     do: build_response(200, "OK", "Hello, world!") |> send_response(client)
 
   defp build_response(status_code, status_message, message_body) do
@@ -71,6 +66,7 @@ defmodule Nectar.Worker do
 
     #{message_body}
     """
+    |> String.trim()
   end
 
   defp send_response(response, client) do

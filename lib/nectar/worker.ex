@@ -66,6 +66,7 @@ defmodule Nectar.Worker do
 
     #{message_body}
     """
+    |> String.trim()
   end
 
   defp send_response(response, client) do

@@ -3,6 +3,8 @@ defmodule Nectar do
   Documentation for Nectar.
   """
 
+  use Application
+
   require Logger
 
   def start(_type, _args) do
@@ -10,7 +12,8 @@ defmodule Nectar do
 
     {:ok, socket} =
       :gen_tcp.listen(port, [:binary, packet: :raw, active: false, reuseaddr: true, backlog: 1024])
-    Logger.debug "Listening on Port #{port}"
+
+    Logger.debug("Listening on Port #{port}")
 
     Nectar.Supervisor.start_link(socket)
   end

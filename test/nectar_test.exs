@@ -3,6 +3,6 @@ defmodule NectarTest do
   doctest Nectar
 
   test "greets the world" do
-    assert Nectar.hello() == :world
+    assert HTTPoison.get("http://localhost:8081/") == ""
   end
 end

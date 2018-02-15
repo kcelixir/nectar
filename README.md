@@ -47,6 +47,7 @@ We use [SemVer](http://semver.org/) for versioning. For the versions available, 
 
 * [Craig S. Cottingham](https://github.com/CraigCottingham)
 * [Jeffery Utter](https://github.com/jeffutter)
+* [Johnny 5](https://github.com/djgoku)
 
 ## License
 

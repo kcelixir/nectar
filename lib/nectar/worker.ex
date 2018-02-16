@@ -42,6 +42,8 @@ defmodule Nectar.Worker do
 
   defp parse_headers([h | t]) do
     [key, value] = String.split(h, ":", parts: 2, trim: true)
+    key = String.trim(key)
+    value = String.trim(value)
 
     case parse_headers(t) do
       {headers, body} when is_binary(body) -> {[{key, value}] ++ headers, body}

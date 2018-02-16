@@ -70,14 +70,39 @@ defmodule Nectar.Worker do
   end
 
   defp log_request(
-         request = %Request{method: method, path: path, version: version, headers: headers}
+         request = %Request{
+           method: method,
+           path: path,
+           version: {major, minor},
+           headers: headers,
+           body: body
+         }
        ) do
-    time =
-      Timex.now()
-      |> Timex.format!("{ISO:Extended}")
+    Logger.info(fn ->
+      time = Timex.format!(Timex.now(), "{ISO:Extended}")
+      "[#{time}] - HTTP/#{major}.#{minor}: #{method} #{inspect(path)}"
+    end)
 
-    Logger.info(fn -> "[#{time}] - HTTP #{inspect(version)}: #{method} #{inspect(path)}" end)
-    Logger.debug(fn -> "Headers: #{inspect(headers)}" end)
+    Logger.debug(fn ->
+      body =
+        case String.split(body, ~r{(\r\n\|\r|\n)}) do
+          [""] -> []
+          list -> list
+        end
+
+      message =
+        [
+          "#{method} #{inspect(path)} HTTP/#{major}.#{minor}",
+          Enum.map(headers, fn {k, v} -> "#{k}: #{v}" end),
+          "",
+          body
+        ]
+        |> List.flatten()
+        |> Enum.map(fn line -> "< " <> line end)
+        |> Enum.join("\n")
+
+      "\n<\n" <> message
+    end)
 
     request
   end
@@ -146,8 +171,22 @@ defmodule Nectar.Worker do
     """
   end
 
+  defp log_response(response) do
+    Logger.debug(fn ->
+      message =
+        response
+        |> String.split(~r{(\r\n\|\r|\n)})
+        |> Enum.map(fn line -> "> " <> line end)
+        |> Enum.join("\n")
+
+      "\n>\n" <> message
+    end)
+
+    response
+  end
+
   defp send_response(response, client) do
-    Logger.debug(fn -> ">>>\n#{response}<<<" end)
+    log_response(response)
     :gen_tcp.send(client, response)
   end
 

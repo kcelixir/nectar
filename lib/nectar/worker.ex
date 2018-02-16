@@ -1,4 +1,8 @@
 defmodule Nectar.Worker do
+  @moduledoc """
+  Documentation for Nectar.Worker.
+  """
+
   use GenServer
 
   require Logger
@@ -80,7 +84,7 @@ defmodule Nectar.Worker do
     :gen_tcp.close(client)
   end
 
-  defp get_datetime() do
+  defp get_datetime do
     Timex.now()
     |> Timex.format!("{WDshort} {0D} {Mshort} {YYYY} {0h12}:{m}:{s} GMT")
   end

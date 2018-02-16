@@ -7,8 +7,9 @@ defmodule Nectar do
 
   require Logger
 
-  def start(_type, _args) do
-    port = 8080
+  def start(_type, args) do
+    port = Keyword.get(args, :port, 8080)
+    concurrency = Keyword.get(args, :concurrency, 20)
 
     {:ok, socket} =
       :gen_tcp.listen(port, [
@@ -22,6 +23,6 @@ defmodule Nectar do
 
     Logger.info(fn -> "Listening on Port #{port}" end)
 
-    Nectar.Supervisor.start_link(socket)
+    Nectar.Supervisor.start_link(socket, concurrency)
   end
 end

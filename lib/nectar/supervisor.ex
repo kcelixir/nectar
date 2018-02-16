@@ -5,13 +5,13 @@ defmodule Nectar.Supervisor do
 
   use Supervisor
 
-  def start_link(socket) do
-    Supervisor.start_link(__MODULE__, socket, name: __MODULE__)
+  def start_link(socket, concurrency) do
+    Supervisor.start_link(__MODULE__, {socket, concurrency}, name: __MODULE__)
   end
 
-  def init(socket) do
+  def init({socket, concurrency}) do
     children =
-      0..20
+      0..concurrency
       |> Enum.map(fn n ->
         worker(Nectar.Worker, [socket], restart: :permanent, id: :"worker#{n}")
       end)

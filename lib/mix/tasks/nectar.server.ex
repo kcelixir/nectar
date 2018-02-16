@@ -5,7 +5,7 @@ defmodule Mix.Tasks.Nectar.Server do
 
   use Mix.Task
 
-  alias MixTask.Run
+  alias Mix.Tasks.Run
 
   @shortdoc "Starts Nectar Server"
 

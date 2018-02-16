@@ -20,38 +20,41 @@ defmodule Nectar.Worker do
   end
 
   defp serve(client) do
-    client
-    |> read_request()
+    {method, path, version} = read_request(client)
+    headers = read_headers(client)
+    body = ""
+
+    %{request_line: {method, path, version}, headers: headers, body: body}
     |> write_response(client)
   end
 
   defp read_request(client) do
-    with {:ok, raw_request} <- :gen_tcp.recv(client, 0) do
-      request = parse_request(raw_request)
-
-      Logger.debug(inspect(request), label: "request")
-      request
+    with :ok <- :inet.setopts(client, packet: :http_bin),
+         {:ok, {:http_request, method, path, version}} <- :gen_tcp.recv(client, 0) do
+      {method, path, version}
+    else
+      {:http_error, error} -> {:error, error}
+      nil -> {:error, "Nothing Received"}
+      _ -> {:error, "Nothing Received"}
     end
   end
 
-  defp parse_request(data) do
-    [request_line | rest] = String.split(data, "\r\n")
-
-    {headers, body} = parse_headers(rest)
-
-    %{request_line: request_line, headers: headers, body: body}
+  defp read_headers(client) do
+    read_headers([], client)
   end
 
-  defp parse_headers(["" | t]), do: {[], t}
+  defp read_headers(acc, client) do
+    case :gen_tcp.recv(client, 0) do
+      {:ok, {:http_header, _, name, _, value}} ->
+        [{name, value} | acc]
+        |> read_headers(client)
 
-  defp parse_headers([h | t]) do
-    [key, value] = String.split(h, ":", parts: 2, trim: true)
-    key = String.trim(key)
-    value = String.trim(value)
+      {:ok, :http_eoh} ->
+        acc
 
-    case parse_headers(t) do
-      {headers, body} when is_binary(body) -> {[{key, value}] ++ headers, body}
-      {headers, _} -> {[{key, value}] ++ headers, nil}
+      unknown ->
+        Logger.warn(unknown, label: "unknown in headers")
+        acc
     end
   end
 
@@ -78,7 +81,7 @@ defmodule Nectar.Worker do
   end
 
   defp send_response(response, client) do
-    Logger.debug(">>>\n#{response}<<<")
+    Logger.debug(fn -> ">>>\n#{response}<<<" end)
     :gen_tcp.send(client, response)
     :gen_tcp.shutdown(client, :read_write)
     :gen_tcp.close(client)

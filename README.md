@@ -33,6 +33,12 @@ Then run:
 $ mix deps.get
 ```
 
+### Running
+
+```shell
+$ mix nectar.server
+```
+
 ## Contributing
 
 Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)

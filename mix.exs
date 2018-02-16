@@ -29,7 +29,7 @@ defmodule Nectar.MixProject do
     [
       {:credo, "~> 0.8.10"},
       {:httpoison, "~> 1.0", only: [:dev, :test]},
-      {:timex, "~> 3.1"},
+      {:timex, "~> 3.1"}
     ]
   end
 

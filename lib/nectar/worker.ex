@@ -25,7 +25,18 @@ defmodule Nectar.Worker do
     body = ""
 
     %{request_line: {method, path, version}, headers: headers, body: body}
+    |> log_request()
     |> write_response(client)
+  end
+
+  defp log_request(request = %{request_line: {method, path, version}}) do
+    time =
+      Timex.now()
+      |> Timex.format!("{ISO:Extended}")
+
+    Logger.info(fn -> "[#{time}] - HTTP #{inspect(version)}: #{method} #{inspect(path)}" end)
+
+    request
   end
 
   defp read_request(client) do

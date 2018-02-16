@@ -12,6 +12,9 @@ defmodule Nectar.MixProject do
       package: package(),
       deps: deps(),
       name: "Nectar",
+      aliases: [
+        test: "test --no-start"
+      ],
       source_url: "https://github.com/kcelixir/nectar"
     ]
   end

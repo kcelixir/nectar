@@ -30,9 +30,10 @@ defmodule Nectar.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:credo, "~> 0.8.10"},
+      {:credo, "~> 0.8.10", only: :dev},
       {:httpoison, "~> 1.0", only: [:dev, :test]},
-      {:timex, "~> 3.1"}
+      {:mix_test_watch, "~> 0.5.0", only: [:dev, :test], runtime: false},
+      {:timex, "~> 3.1"},
     ]
   end
 

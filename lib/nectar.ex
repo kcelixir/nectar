@@ -11,9 +11,16 @@ defmodule Nectar do
     port = 8080
 
     {:ok, socket} =
-      :gen_tcp.listen(port, [:binary, packet: :raw, active: false, reuseaddr: true, backlog: 1024])
+      :gen_tcp.listen(port, [
+        :binary,
+        packet: :raw,
+        active: false,
+        reuseaddr: true,
+        backlog: 1024,
+        nodelay: true
+      ])
 
-    Logger.debug(fn -> "Listening on Port #{port}" end)
+    Logger.info(fn -> "Listening on Port #{port}" end)
 
     Nectar.Supervisor.start_link(socket)
   end

@@ -1,4 +1,8 @@
 defmodule Nectar.Supervisor do
+  @moduledoc """
+  Documentation for Nectar.Supervisor.
+  """
+
   use Supervisor
 
   def start_link(socket) do

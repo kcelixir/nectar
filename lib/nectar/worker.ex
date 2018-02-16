@@ -58,20 +58,23 @@ defmodule Nectar.Worker do
     do: build_response(200, "OK", "Hello, world!") |> send_response(client)
 
   defp build_response(status_code, status_message, message_body) do
+    # account for the "\r\n" pair at the end of the message body
+    content_length = byte_size(message_body) + 2
+
     """
     HTTP/1.1 #{status_code} #{status_message}
     Content-Type: text/plain
     Server: Nectar
-    Content-Length: #{byte_size(message_body)}
+    Content-Length: #{content_length}
     Connection: close
     Date: #{get_datetime()}
 
-    #{message_body}
+    #{message_body}\r
     """
-    |> String.trim()
   end
 
   defp send_response(response, client) do
+    Logger.debug(">>>\n#{response}<<<")
     :gen_tcp.send(client, response)
     :gen_tcp.shutdown(client, :read_write)
     :gen_tcp.close(client)

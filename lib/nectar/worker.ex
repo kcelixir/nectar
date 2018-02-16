@@ -15,38 +15,79 @@ defmodule Nectar.Worker do
     Task.start_link(fn ->
       {:ok, client} = :gen_tcp.accept(socket)
       Logger.debug("client connected")
+      :ok = :inet.setopts(client, packet: :http_bin)
       serve(client)
     end)
   end
 
   defp serve(client) do
-    {method, path, version} = read_request(client)
-    headers = read_headers(client)
-    body = ""
+    with {method, path, version} <- read_request(client),
+         headers <- read_headers(client),
+         body <- "" do
+      %{request_line: {method, path, version}, headers: headers, body: body}
+      |> log_request()
+      |> write_response(client)
 
-    %{request_line: {method, path, version}, headers: headers, body: body}
-    |> log_request()
-    |> write_response(client)
+      serve(client)
+    else
+      {:error, :closed} ->
+        # Don't handle another request (let the Task die)
+        nil
+
+      {:error, :enotconn} ->
+        # Don't handle another request (let the Task die)
+        nil
+
+      {:error, reason} ->
+        {:error, reason}
+        |> log_request()
+        |> write_response(client)
+
+        serve(client)
+    end
   end
 
-  defp log_request(request = %{request_line: {method, path, version}}) do
+  defp log_request(request = {:error, reason}) do
+    time =
+      Timex.now()
+      |> Timex.format!("{ISO:Extended}")
+
+    Logger.error(fn -> "[#{time}] - Error #{inspect(reason)}" end)
+
+    request
+  end
+
+  defp log_request(request = %{request_line: {method, path, version}, headers: headers}) do
     time =
       Timex.now()
       |> Timex.format!("{ISO:Extended}")
 
     Logger.info(fn -> "[#{time}] - HTTP #{inspect(version)}: #{method} #{inspect(path)}" end)
+    Logger.debug(fn -> "Headers: #{inspect(headers)}" end)
 
     request
   end
 
   defp read_request(client) do
-    with :ok <- :inet.setopts(client, packet: :http_bin),
-         {:ok, {:http_request, method, path, version}} <- :gen_tcp.recv(client, 0) do
+    with {:ok, {:http_request, method, path, version}} <- :gen_tcp.recv(client, 0) do
       {method, path, version}
     else
-      {:http_error, error} -> {:error, error}
-      nil -> {:error, "Nothing Received"}
-      _ -> {:error, "Nothing Received"}
+      {:http_error, error} ->
+        {:error, error}
+
+      # The client closed the connection
+      {:error, :enotconn} ->
+        {:error, :enotconn}
+
+      # The client closed the connection
+      {:error, :closed} ->
+        {:error, :closed}
+
+      nil ->
+        {:error, "Nothing Received"}
+
+      e ->
+        {:error, "Receive Error: #{inspect(e)}"}
     end
   end
 
@@ -84,7 +125,7 @@ defmodule Nectar.Worker do
     Content-Type: text/plain
     Server: Nectar
     Content-Length: #{content_length}
-    Connection: close
+    Connection: keep-alive
     Date: #{get_datetime()}
 
     #{message_body}\r
@@ -94,8 +135,6 @@ defmodule Nectar.Worker do
   defp send_response(response, client) do
     Logger.debug(fn -> ">>>\n#{response}<<<" end)
     :gen_tcp.send(client, response)
-    :gen_tcp.shutdown(client, :read_write)
-    :gen_tcp.close(client)
   end
 
   defp get_datetime do

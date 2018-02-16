@@ -5,6 +5,8 @@ defmodule Nectar.Worker do
 
   use GenServer
 
+  alias Nectar.Request
+
   require Logger
 
   def init(args) do
@@ -24,11 +26,21 @@ defmodule Nectar.Worker do
     with {method, path, version} <- read_request(client),
          headers <- read_headers(client),
          body <- "" do
-      %{request_line: {method, path, version}, headers: headers, body: body}
+      request = %Request{
+        method: method,
+        path: path,
+        version: version,
+        headers: headers,
+        body: body
+      }
+
+      request
       |> log_request()
       |> write_response(client)
 
-      serve(client)
+      if Request.continue?(request) do
+        serve(client)
+      end
     else
       {:error, :closed} ->
         # Don't handle another request (let the Task die)
@@ -57,7 +69,9 @@ defmodule Nectar.Worker do
     request
   end
 
-  defp log_request(request = %{request_line: {method, path, version}, headers: headers}) do
+  defp log_request(
+         request = %Request{method: method, path: path, version: version, headers: headers}
+       ) do
     time =
       Timex.now()
       |> Timex.format!("{ISO:Extended}")
@@ -113,7 +127,7 @@ defmodule Nectar.Worker do
   defp write_response({:error, reason}, client),
     do: build_response(500, "Internal Server Error", inspect(reason)) |> send_response(client)
 
-  defp write_response(%{request_line: _, headers: _, body: _}, client),
+  defp write_response(%Request{}, client),
     do: build_response(200, "OK", "Hello, world!") |> send_response(client)
 
   defp build_response(status_code, status_message, message_body) do

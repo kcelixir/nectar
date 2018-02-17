@@ -33,7 +33,7 @@ defmodule Nectar.MixProject do
       {:credo, "~> 0.8.10", only: :dev},
       {:httpoison, "~> 1.0", only: [:dev, :test]},
       {:mix_test_watch, "~> 0.5.0", only: [:dev, :test], runtime: false},
-      {:timex, "~> 3.1"},
+      {:timex, "~> 3.1"}
     ]
   end
 

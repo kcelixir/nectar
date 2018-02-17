@@ -154,7 +154,11 @@ defmodule Nectar.Worker do
     do: write_response(%Response{status_code: 500, body: inspect(reason)}, client)
 
   defp write_response(%Request{} = request, client),
-    do: write_response(%Response{version: request.version, status_code: 200, body: "Hello, world!"}, client)
+    do:
+      write_response(
+        %Response{version: request.version, status_code: 200, body: "Hello, world!"},
+        client
+      )
 
   ##
   ## 1xx - informational responses

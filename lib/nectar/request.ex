@@ -1,6 +1,6 @@
 defmodule Nectar.Request do
   @moduledoc """
-  This represents a Nectar Request and contains functions that work on the Request struct.
+  This represents a Nectar request and contains functions that work on the Request struct.
   """
 
   defstruct method: nil, path: nil, version: nil, headers: [], body: nil

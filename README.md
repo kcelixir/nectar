@@ -1,5 +1,9 @@
 # Nectar
 
+[![CircleCI branch](https://img.shields.io/circleci/project/github/kcelixir/nectar/master.svg)](https://circleci.com/gh/kcelixir/nectar/tree/master)
+[![license](https://img.shields.io/github/license/kcelixir/nectar.svg)](https://github.com/kcelixir/nectar/blob/master/LICENSE)
+[![Github last commit (branch)](https://img.shields.io/github/last-commit/kcelixir/nectar.svg)](#)
+
 > An HTTP server for Elixir.
 
 Nectar is a simple HTTP server implemented in Elixir. It is intended to be a replacement for [Cowboy](https://github.com/ninenines/cowboy).

@@ -5,9 +5,9 @@ defmodule Nectar.Worker do
 
   use GenServer
 
-  alias Nectar.Request
-
   require Logger
+
+  alias Nectar.Request
 
   def init(args) do
     {:ok, args}
@@ -156,26 +156,32 @@ defmodule Nectar.Worker do
     do: build_response(200, "OK", "Hello, world!") |> send_response(client)
 
   defp build_response(status_code, status_message, message_body) do
-    # account for the "\r\n" pair at the end of the message body
-    content_length = byte_size(message_body) + 2
+    header_lines = [
+      "Content-Type: text/plain",
+      "Server: Nectar",
+      "Content-Length: #{byte_size(message_body)}",
+      "Connection: keep-alive",
+      "Date: #{get_datetime()}"
+    ]
 
-    """
-    HTTP/1.1 #{status_code} #{status_message}
-    Content-Type: text/plain
-    Server: Nectar
-    Content-Length: #{content_length}
-    Connection: keep-alive
-    Date: #{get_datetime()}
+    response_lines = [
+      "HTTP/1.1 #{status_code} #{status_message}",
+      header_lines,
+      "",
+      message_body
+    ]
 
-    #{message_body}\r
-    """
+    response_lines
+    |> Enum.reject(fn line -> is_nil(line) end)
+    |> List.flatten()
+    |> Enum.join("\r\n")
   end
 
   defp log_response(response) do
     Logger.debug(fn ->
       message =
         response
-        |> String.split(~r{(\r\n\|\r|\n)})
+        |> String.split(~r{(\r\n|\r|\n)})
         |> Enum.map(fn line -> "> " <> line end)
         |> Enum.join("\n")
 

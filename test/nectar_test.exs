@@ -23,6 +23,9 @@ defmodule NectarTest do
   end
 
   test "GET /", %{port: port} do
-    assert {:ok, %HTTPoison.Response{}} = HTTPoison.get("http://localhost:#{port}/")
+    assert {:ok, %HTTPoison.Response{} = response} = HTTPoison.get("http://localhost:#{port}/")
+    assert response.status_code == 200
+    assert response.body == "Hello, world!"
+    assert Enum.any?(response.headers, fn header -> header == {"Content-Type", "text/plain"} end)
   end
 end

@@ -22,10 +22,27 @@ defmodule NectarTest do
     %{port: port}
   end
 
-  test "GET /", %{port: port} do
-    assert {:ok, %HTTPoison.Response{} = response} = HTTPoison.get("http://localhost:#{port}/")
-    assert response.status_code == 200
-    assert response.body == "Hello, world!"
-    assert Enum.any?(response.headers, fn header -> header == {"Content-Type", "text/plain"} end)
+  describe "GET" do
+    test "GET /", %{port: port} do
+      assert {:ok, %HTTPoison.Response{} = response} = HTTPoison.get("http://localhost:#{port}/")
+      assert response.status_code == 200
+      assert response.body == "Hello, world!"
+
+      assert Enum.any?(response.headers, fn header -> header == {"Content-Type", "text/plain"} end)
+    end
+
+    test "Returns the server version", %{port: port} do
+      assert {:ok, %HTTPoison.Response{headers: headers}} =
+               HTTPoison.get("http://localhost:#{port}/")
+
+      server_string =
+        headers
+        |> Enum.into(%{})
+        |> Map.get("Server")
+
+      application_version = Application.spec(:nectar, :vsn)
+
+      assert server_string == "Nectar/#{application_version}"
+    end
   end
 end

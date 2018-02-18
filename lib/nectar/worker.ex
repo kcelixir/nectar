@@ -369,7 +369,7 @@ defmodule Nectar.Worker do
   defp write_response(%Response{} = response, client) do
     header_lines = [
       "Content-Type: text/plain",
-      "Server: Nectar",
+      "Server: #{server_version()}",
       "Content-Length: #{byte_size(response.body)}",
       "Connection: keep-alive",
       "Date: #{get_datetime()}"
@@ -391,6 +391,11 @@ defmodule Nectar.Worker do
 
   defp get_version(%Response{version: {major, minor}}), do: "HTTP/#{major}.#{minor}"
   defp get_version(%Response{}), do: "HTTP/1.1"
+
+  defp server_version do
+    version = Application.spec(:nectar, :vsn)
+    "Nectar/#{version}"
+  end
 
   defp log_response(response) do
     Logger.debug(fn ->

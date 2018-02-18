@@ -2,18 +2,13 @@ defmodule NectarTest do
   use ExUnit.Case
   doctest Nectar
 
-  # https://en.wikipedia.org/wiki/Ephemeral_port#Range
-  def start_server, do: start_server(49152)
-
-  def start_server(65536), do: {:error, :no_port}
-
-  def start_server(port) do
-    case Nectar.start(nil, port: port, concurrency: 1) do
-      {:ok, pid} when is_pid(pid) ->
+  def start_server do
+    case Nectar.start(nil, concurrency: 1) do
+      {:ok, pid, %{port: port}} when is_pid(pid) ->
         {:ok, port}
 
-      _ ->
-        start_server(port + 1)
+      {:error, reason} ->
+        raise "could not start nectar server: #{inspect(reason)}"
     end
   end
 
